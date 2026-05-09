@@ -1,15 +1,19 @@
 {
-    "name": "My YT Bookmarks",
+    "name": "Bookmarks",
     "version": "0.1.0",
-    "description": "Saving timestamps in YT videos",
+    "description": "Saving timestamps of youtube, google drive and yandex disc videos",
     "permissions": ["storage", "tabs"],
-    "host_permissions": ["https://*.youtube.com/*"],
+    "host_permissions": ["https://*.youtube.com/*", "https://disk.yandex.ru/*"],
     "background": {
       "service_worker": "background.js"
     },
     "content_scripts": [
       {
         "matches": ["https://*.youtube.com/*"],
+        "js": ["contentScript.js"]
+      },
+      {
+        "matches": ["https://disk.yandex.ru/*"],
         "js": ["contentScript.js"]
       }
     ],
@@ -21,7 +25,7 @@
           "assets/delete.png",
           "assets/save.png"
         ],
-        "matches": ["https://*.youtube.com/*"]
+        "matches": ["https://*.youtube.com/*", "https://disk.yandex.ru/*"]
       }
     ],
     "action": {
@@ -30,7 +34,7 @@
         "24": "assets/ext-icon.png",
         "32": "assets/ext-icon.png"
       },
-      "default_title": "My YT Bookmarks",
+      "default_title": "Bookmarks",
       "default_popup": "popup.html"
     },
     "manifest_version": 3
