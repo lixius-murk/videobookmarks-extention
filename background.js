@@ -1,8 +1,9 @@
-chrome.tabs.onUpdated.addListener((tabId, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
   //v=VIDEO_ID query parameter
   //Yandex Disk: /d/FILE_ID/FILENAME.mp4 or /i/FILE_ID/FILENAME.mp4
-  
+    if(changeInfo.status !== "complete" || !tab.url) return;
+
   if(tab.url) {
     if(tab.url.includes("youtube.com/watch")) {
       const queryParams = new URLSearchParams(tab.url.split("?")[1]);

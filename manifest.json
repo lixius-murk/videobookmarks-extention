@@ -2,6 +2,9 @@
     "name": "Bookmarks",
     "version": "0.1.0",
     "description": "Saving timestamps of youtube, google drive and yandex disc videos",
+      "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
     "permissions": ["storage", "tabs"],
     "host_permissions": ["https://*.youtube.com/*", "https://disk.yandex.ru/*"],
     "background": {
@@ -9,14 +12,10 @@
     },
     "content_scripts": [
       {
-        "matches": ["https://*.youtube.com/*"],
-        "js": ["contentScript.js"]
-      },
-      {
-        "matches": ["https://disk.yandex.ru/*"],
+        "matches": ["https://*.youtube.com/*", "https://disk.yandex.ru/*"],
         "js": ["contentScript.js"]
       }
-    ],
+        ],
     "web_accessible_resources": [
       {
         "resources": [
