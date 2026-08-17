@@ -5,15 +5,15 @@ const addNewBookmark = () => {};
 
 const viewBookmarks = () => {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    const currentTab = tabs[0];
+    const currTab = tabs[0];
     let videoId = null;
 
-    if(currentTab.url.includes("youtube.com/watch")) {
-      const queryParams = new URLSearchParams(currentTab.url.split("?")[1]);
+    if(currTab.url.includes("youtube.com/watch")) {
+      const queryParams = new URLSearchParams(currTab.url.split("?")[1]);
       videoId = queryParams.get("v");
     }
-    else if(currentTab.url.includes("disk.yandex.ru")) {
-      videoId = currentTab.url.split("/d/")[1] || currentTab.url.split("/i/")[1];
+    else if(currTab.url.includes("disk.yandex.ru")) {
+      videoId = currTab.url.split("/d/")[1] || currTab.url.split("/i/")[1];
     }
 
     if(!videoId) return;
@@ -51,19 +51,58 @@ const viewBookmarks = () => {
   });
 };
 
-const onPlay = e => {};
+const onPlay = e => {
+  const bookmarkEl = e.target.closest('.bookmark');
+  if(!bookmarkEl) return;
+  const timeStr = bookmarkEl.querySelector('.bookmark-time').textContent;
+  const [minutes, seconds] = timeStr.split(':').map(Number);
+  const targetTime = minutes * 60 + seconds;
+
+  chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+    const currTab = tabs[0];
+    if(currTab.url.includes("youtube.com/watch")) {
+      chrome.tabs.sendMessage(currTab.id, {
+        type: "SEEK",
+        time: targetTime,
+        source: "youtube"
+      }, (response) => {
+        if(chrome.runtime.lastError) {
+          console.error("Error sending seek message:", chrome.runtime.lastError);
+        } else {
+          console.log(`Seeking to ${targetTime} seconds on YouTube`);
+        }
+    }
+    );
+    }
+    else if(currTab.url.includes("disk.yandex.ru")) {
+      chrome.tabs.sendMessage(currTab.id, {
+        type: "SEEK",
+        time: targetTime,
+        source: "yandexDisk"
+      }, (response) => {
+        if(chrome.runtime.lastError) {
+          console.error("Error sending seek message:", chrome.runtime.lastError);
+        } else {
+          console.log(`Seeking to ${targetTime} seconds on Yandex Disk`);
+        }
+      });
+    }
+
+  })
+
+};
 
 const onDelete = e => {
   chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-    const currentTab = tabs[0];
+    const currTab = tabs[0];
     let videoId = null;
 
-    if(currentTab.url.includes("youtube.com/watch")) {
-      const queryParams = new URLSearchParams(currentTab.url.split("?")[1]);
+    if(currTab.url.includes("youtube.com/watch")) {
+      const queryParams = new URLSearchParams(currTab.url.split("?")[1]);
       videoId = queryParams.get("v");
     }
-    else if(currentTab.url.includes("disk.yandex.ru")) {
-      videoId = currentTab.url.split("/d/")[1] || currentTab.url.split("/i/")[1];
+    else if(currTab.url.includes("disk.yandex.ru")) {
+      videoId = currTab.url.split("/d/")[1] || currTab.url.split("/i/")[1];
     }
 
     if(!videoId) return;
@@ -86,12 +125,23 @@ const onDelete = e => {
 
 const setBookmarkAttributes =  () => {};
 
-document.addEventListener("DOMContentLoaded", () => {
-  viewBookmarks();
 
-  document.getElementById("bookmarks").addEventListener("click", (e) => {
-    if(e.target.classList.contains("delete-btn")) {
-      onDelete(e);
+document.addEventListener("DOMContentLoaded", () => {
+    // Check if extension context is valid
+    try {
+        chrome.runtime.getManifest();
+        viewBookmarks();
+        
+        document.getElementById("bookmarks").addEventListener("click", (e) => {
+            if(e.target.classList.contains("delete-btn")) {
+                onDelete(e);
+            } else {
+                onPlay(e);
+            }
+        });
+    } catch (e) {
+        console.error("Extension context invalidated, please reload the extension");
+        document.getElementById("bookmarks").innerHTML = "<p>Please reload the extension</p>";
     }
-  });
 });
+

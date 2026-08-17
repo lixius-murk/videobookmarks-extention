@@ -5,14 +5,14 @@
       "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
-    "permissions": ["storage", "tabs"],
-    "host_permissions": ["https://*.youtube.com/*", "https://disk.yandex.ru/*"],
+    "permissions": ["storage", "tabs", "scripting", "activeTab" ],
+    "host_permissions": ["https://*.youtube.com/*", "https://*.youtube.com/watch*", "https://disk.yandex.ru/*"],
     "background": {
       "service_worker": "background.js"
     },
     "content_scripts": [
       {
-        "matches": ["https://*.youtube.com/*", "https://disk.yandex.ru/*"],
+        "matches": ["https://*.youtube.com/watch*", "https://disk.yandex.ru/*", "https://disk.yandex.ru/d/*", "https://disk.yandex.ru/i/*"],
         "js": ["contentScript.js"]
       }
         ],

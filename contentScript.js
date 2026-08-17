@@ -1,4 +1,3 @@
-
 (() => {
     let youtubeLeftControls, youtubePlayer;
     let yandexLeftControls, yandexPlayer;
@@ -16,8 +15,40 @@
                 currBookmarks = result[currVideo] ? JSON.parse(result[currVideo]) : [];
                 newVideoLoaded();
             });
+
         }
-    });
+        else if(type === "PING") {
+            console.log("PING received, responding");
+            response({status: "alive"});
+            return true;
+        }
+        else if(type == "SEEK") {
+             console.log("SEEK message received:", obj);
+            if(source === "youtube") {
+            const video = document.querySelector("video");
+            if(video) {
+                video.currentTime = obj.time;
+                console.log(`YouTube video seeked to ${time} seconds`);
+                response({success: true});
+            } else {
+                console.error("YouTube video element not found");
+                response({success: false, error: "Video not found"});
+            }
+            }
+            else if(source === "yandexDisk") {
+            const video = document.querySelector("video");
+            if(video) {
+                video.currentTime = obj.time;
+                console.log(`Yandex video seeked to ${time} seconds`);
+                response({success: true});
+            } else {
+                console.error("Yandex video element not found");
+                response({success: false, error: "Video not found"});
+            }
+            }
+        }
+        return true;
+});
 
     newVideoLoaded = () => {
         const bookmarkBtnExists = document.getElementsByClassName("bookmark-btn")[0];
@@ -114,114 +145,21 @@
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
     };
+    const goToTime = (t) =>{
+            switch(videoSource) {
+                case "youtube":
+                    if (youtubePlayer.getCurrentTime() != t){
+                        youtubePlayer.currentTime = t;
+                    }
+
+                    break;
+                    
+                case "yandexDisk":
+                    if (yandexPlayer.getCurrentTime() != t){
+                        yandexPlayer.currentTime = t;
+                    }       
+                    break;
+            }
+        }
+
 })();
-
-
-// const getTime = t => {
-//     const seconds = Math.floor(t);
-//     const minutes = Math.floor(seconds / 60);
-//     const secs = seconds % 60;
-//     return `${minutes}:${secs.toString().padStart(2, "0")}`;
-// }
-// (() => {
-//     let youtubeLeftControls = " ", youtubePlayer = " ";
-//     let yandexLeftControls = " ", yandexPlayer = " ";
-//     let currVideo = "";
-//     let currBookmarks = [];
-//     let videoSource = "youtube";
-//     chrome.runtime.onMessage.addListener((obj, sender, response) => {
-//         const {type, val, videoId, source} = obj;
-//         if(type == "NEW") {
-//             videoSource = source;
-//             currVideo = videoId;
-//             newVideoLoaded();
-//         }
-
-//     });
-
-
-//     newVideoLoaded = () => {
-//         const bookmarkBtnExists = document.getElementsByClassName("bookmark-btn")[0];
-//         if(!bookmarkBtnExists) {
-//             const bookmarkBtn = document.createElement("img");
-//             bookmarkBtn.src = chrome.runtime.getURL("assets/bookmark.png");
-//             bookmarkBtn.className = "bookmark-btn";
-//             bookmarkBtn.title = "Click to bookmark current timestamp";
-            
-//             switch(videoSource) {
-//                 case "youtube":
-//             const waitForPlayer = setInterval(() => {
-//                     youtubeLeftControls = document.getElementsByClassName("ytp-left-controls")[0];
-//                     youtubePlayer = document.getElementsByClassName("video-stream")[0];
-                    
-//                     if(youtubeLeftControls && youtubePlayer) {
-//                         clearInterval(waitForPlayer);
-//                         youtubeLeftControls.appendChild(bookmarkBtn);
-//                         bookmarkBtn.addEventListener("click", addNewBookmarkEventHandler);
-//                         console.log("YouTube player found, bookmark button added");
-//                     }
-//                 }, 500);
-                
-//                 setTimeout(() => clearInterval(waitForPlayer), 10000);
-//                 break;
-
-//                 // youtubeLeftControls = document.getElementsByClassName("ytp-left-controls")[0];
-//                     // youtubePlayer = document.getElementsByClassName("video-stream")[0];
-//                     // youtubeLeftControls.appendChild(bookmarkBtn);
-//                     // bookmarkBtn.addEventListener("click", addNewBookmarkEventHandler);
-//                     // break;
-//             case "yandexDisk":
-//                 yandexPlayer = document.querySelector("video");
-                
-//                 // Use the class you found
-//                 yandexLeftControls = document.getElementsByClassName("bottom-toolbar")[0];
-                
-//                 if(yandexLeftControls && yandexPlayer) {
-//                     yandexLeftControls.appendChild(bookmarkBtn);
-//                     bookmarkBtn.addEventListener("click", addNewBookmarkEventHandler);
-//                     console.log("Yandex bookmark button added to bottom-toolbar");
-//                 } else {
-//                     // Fallback: wait for elements to load
-//                     const waitForElements = setInterval(() => {
-//                         yandexPlayer = document.querySelector("video");
-//                         yandexLeftControls = document.getElementsByClassName("bottom-toolbar")[0];
-                        
-//                         if(yandexLeftControls && yandexPlayer) {
-//                             clearInterval(waitForElements);
-//                             yandexLeftControls.appendChild(bookmarkBtn);
-//                             bookmarkBtn.addEventListener("click", addNewBookmarkEventHandler);
-//                             console.log("Yandex bookmark button added (delayed)");
-//                         }
-//                     }, 500);
-                    
-//                     setTimeout(() => clearInterval(waitForElements), 10000);
-//                 }
-//                 break;
-//             }
-//         }
-//     };
-//     const addNewBookmarkEventHandler = () => {
-//         currentTime = youtubePlayer.currentTime;
-//         if(!currentTime){
-//             currentTime = yandexPlayer.currentTime;
-//         }
-//         const newBookmark = {
-//             time: currentTime,
-//             desc: "Bookmark at " + getTime(currentTime),
-//         };
-//         console.log(newBookmark);
-//         //using spread operator to insert new bookmark
-//         const updatedBookmarks = [...currBookmarks, newBookmark].sort((a, b) => a.time - b.time);
-
-//         chrome.storage.sync.set({
-//             [currVideo]: JSON.stringify(updatedBookmarks)
-//         }, () => {
-//             currBookmarks = updatedBookmarks;
-//             console.log("Bookmark saved!");
-
-//         });
-//     }
-//     newVideoLoaded();
-// })();
-
-
