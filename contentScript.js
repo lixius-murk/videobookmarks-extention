@@ -4,51 +4,63 @@
     let currVideo = "";
     let currBookmarks = [];
     let videoSource = "youtube";
-    let intervalId = null; 
+    let intervalId = null;
+
+    const getYandexId = () => {
+        const url = window.location.href;
+        const urlParams = new URLSearchParams(new URL(url).search);
+        let id = urlParams.get("idDialog");
+        if(!id) {
+            id = url.split("/d/")[1] || url.split("/i/")[1];
+        }
+        if(id) {
+            id = id.replace(/^%2Fdisk%2F/, '').split('/').pop();
+        }
+        return id;
+    };
+
+    const selfInitialize = () => {
+        const url = window.location.href;
+        if(url.includes("disk.yandex.ru") || url.includes("disk.yandex.com")) {
+            const videoId = getYandexId();
+            if(videoId && !currVideo) {
+                videoSource = "yandexDisk";
+                currVideo = videoId;
+                chrome.storage.sync.get([currVideo], (result) => {
+                    currBookmarks = result[currVideo] ? JSON.parse(result[currVideo]) : [];
+                    setTimeout(newVideoLoaded, 2000);
+                });
+            }
+        }
+    };
+
+    setTimeout(selfInitialize, 1000);
+
     chrome.runtime.onMessage.addListener((obj, sender, response) => {
         const {type, val, videoId, source} = obj;
         if(type == "NEW") {
             videoSource = source;
             currVideo = videoId;
-            
             chrome.storage.sync.get([currVideo], (result) => {
                 currBookmarks = result[currVideo] ? JSON.parse(result[currVideo]) : [];
                 newVideoLoaded();
             });
-
         }
         else if(type === "PING") {
-            console.log("PING received, responding");
             response({status: "alive"});
             return true;
         }
         else if(type == "SEEK") {
-             console.log("SEEK message received:", obj);
-            if(source === "youtube") {
             const video = document.querySelector("video");
             if(video) {
                 video.currentTime = obj.time;
-                console.log(`YouTube video seeked to ${time} seconds`);
                 response({success: true});
             } else {
-                console.error("YouTube video element not found");
                 response({success: false, error: "Video not found"});
-            }
-            }
-            else if(source === "yandexDisk") {
-            const video = document.querySelector("video");
-            if(video) {
-                video.currentTime = obj.time;
-                console.log(`Yandex video seeked to ${time} seconds`);
-                response({success: true});
-            } else {
-                console.error("Yandex video element not found");
-                response({success: false, error: "Video not found"});
-            }
             }
         }
         return true;
-});
+    });
 
     newVideoLoaded = () => {
         const bookmarkBtnExists = document.getElementsByClassName("bookmark-btn")[0];
@@ -87,7 +99,7 @@
                 case "yandexDisk":
                     const tryYandex = () => {
                         yandexPlayer = document.querySelector("video");
-                        yandexLeftControls = document.getElementsByClassName("bottom-toolbar")[0];
+                        yandexLeftControls = document.getElementsByClassName("slider__toolbar-right")[0];
                         
                         if(yandexLeftControls && yandexPlayer && !document.querySelector(".bookmark-btn")) {
                             yandexLeftControls.insertBefore(bookmarkBtn, yandexLeftControls.firstChild);
@@ -102,7 +114,7 @@
                         intervalId = setInterval(tryYandex, 500);
                         setTimeout(() => {
                             if(intervalId) clearInterval(intervalId);
-                        }, 10000);
+                        }, 15000);
                     }
                     break;
             }
@@ -111,26 +123,26 @@
     
     const addNewBookmarkEventHandler = () => {
         let currentTime = youtubePlayer?.currentTime;
-        if(!currentTime && yandexPlayer){
-            currentTime = yandexPlayer.currentTime;
+        if(!currentTime) {
+            const video = document.querySelector("video");
+            if(video) currentTime = video.currentTime;
         }
         
         if(!currentTime) {
-            console.error("Could not get current video time");
             return;
         }
         
         const newBookmark = {
             time: currentTime,
             desc: "Bookmark at " + getTime(currentTime),
-        }; 
-        //using spread operator to insert new bookmark
+        };
+        
         const updatedBookmarks = [...currBookmarks, newBookmark].sort((a, b) => a.time - b.time);
         
         chrome.storage.sync.set({
-            [currVideo]: JSON.stringify(updatedBookmarks)}, () => {
+            [currVideo]: JSON.stringify(updatedBookmarks)
+        }, () => {
             currBookmarks = updatedBookmarks;
-            console.log("Bookmark saved:", newBookmark);
         });
     }
 
@@ -145,21 +157,4 @@
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
     };
-    const goToTime = (t) =>{
-            switch(videoSource) {
-                case "youtube":
-                    if (youtubePlayer.getCurrentTime() != t){
-                        youtubePlayer.currentTime = t;
-                    }
-
-                    break;
-                    
-                case "yandexDisk":
-                    if (yandexPlayer.getCurrentTime() != t){
-                        yandexPlayer.currentTime = t;
-                    }       
-                    break;
-            }
-        }
-
 })();
